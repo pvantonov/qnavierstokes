@@ -10,3 +10,6 @@ else:win32:CONFIG(debug, debug|release): LIBS += -L$$OUT_PWD/../ColorScale/debug
 
 INCLUDEPATH += $$PWD/../ColorScale
 DEPENDPATH += $$PWD/../ColorScale
+
+win32:CONFIG(release, debug|release): DESTDIR += $$OUT_PWD/../GUI/release/
+else:win32:CONFIG(debug, debug|release): DESTDIR += $$OUT_PWD/../GUI/debug/

@@ -22,3 +22,6 @@ else:win32:CONFIG(debug, debug|release): LIBS += -L$$OUT_PWD/../FEMTools/Triangl
 
 INCLUDEPATH += $$PWD/../FEMTools/TriangleFEMTools
 DEPENDPATH += $$PWD/../FEMTools/TriangleFEMTools
+
+win32:CONFIG(release, debug|release): DESTDIR += $$OUT_PWD/../GUI/release/
+else:win32:CONFIG(debug, debug|release): DESTDIR += $$OUT_PWD/../GUI/debug/

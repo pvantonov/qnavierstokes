@@ -16,3 +16,6 @@ else:win32:CONFIG(debug, debug|release): LIBS += -L$$OUT_PWD/../Gauss/debug/ -lG
 
 INCLUDEPATH += $$PWD/../Gauss
 DEPENDPATH += $$PWD/../Gauss
+
+win32:CONFIG(release, debug|release): DESTDIR += $$OUT_PWD/../../GUI/release/
+else:win32:CONFIG(debug, debug|release): DESTDIR += $$OUT_PWD/../../GUI/debug/
