@@ -1,0 +1,12 @@
+#ifndef CSRTOOLS_GLOBAL_H
+#define CSRTOOLS_GLOBAL_H
+
+#include <QtCore/qglobal.h>
+
+#if defined(CSRTOOLS_LIBRARY)
+#  define CSRTOOLSSHARED_EXPORT Q_DECL_EXPORT
+#else
+#  define CSRTOOLSSHARED_EXPORT Q_DECL_IMPORT
+#endif
+
+#endif // CSRTOOLS_GLOBAL_H

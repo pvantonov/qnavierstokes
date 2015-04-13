@@ -1,0 +1,12 @@
+#ifndef EMFPAINTER_GLOBAL_H
+#define EMFPAINTER_GLOBAL_H
+
+#include <QtCore/qglobal.h>
+
+#if defined(EMFPAINTER_LIBRARY)
+#  define EMFPAINTERSHARED_EXPORT Q_DECL_EXPORT
+#else
+#  define EMFPAINTERSHARED_EXPORT Q_DECL_IMPORT
+#endif
+
+#endif // EMFPAINTER_GLOBAL_H
