@@ -1,7 +1,7 @@
 #include <math.h>
 #include <QtCore/QFile>
 #include <QtCore/QTextStream>
-#include <QtGui/QApplication>
+#include <QtWidgets/QApplication>
 #include "sideheatingsolver.h"
 #include "../../SLAESolver/LOS/los.h"
 #include "../../MatrixTools/CSRTools/csrtools.h"

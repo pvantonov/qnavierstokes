@@ -1,9 +1,10 @@
+#include <GL/glu.h>
 #include <QtCore/QFile>
 #include <QtCore/QList>
 #include <QtCore/QVector>
 #include <QtCore/QTextStream>
-#include <QtGui/QApplication>
-#include <QtGui/QMessageBox>
+#include <QtWidgets/QApplication>
+#include <QtWidgets/QMessageBox>
 #include "openglpainter.h"
 
 //============================================================================================================

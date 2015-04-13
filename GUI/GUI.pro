@@ -1,4 +1,4 @@
-QT += xml webkit opengl
+QT += widgets xml webkit webkitwidgets opengl
 TEMPLATE = app
 SOURCES += main.cpp \
     mainwindow.cpp \

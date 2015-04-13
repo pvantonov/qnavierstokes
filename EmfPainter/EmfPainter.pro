@@ -1,4 +1,5 @@
-LIBS += C:\QtSDK\mingw\lib\libgdi32.a
+QT += widgets
+LIBS += -lgdi32
 TEMPLATE = lib
 DEFINES += EMFPAINTER_LIBRARY
 SOURCES += emfpainter.cpp

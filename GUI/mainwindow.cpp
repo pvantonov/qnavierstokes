@@ -6,8 +6,8 @@
 #include <QtCore/QProcess>
 #include <QtCore/QTextStream>
 #include <QtCore/QStringList>
-#include <QtGui/QVBoxLayout>
-#include <QtGui/QMessageBox>
+#include <QtWidgets/QVBoxLayout>
+#include <QtWidgets/QMessageBox>
 #include <QtXml/QDomDocument>
 #include "mainwindow.h"
 

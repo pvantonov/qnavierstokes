@@ -1,7 +1,7 @@
 #ifndef EMFPAINTER_H
 #define EMFPAINTER_H
 
-#include <QtGui/Qwidget>
+#include <QtWidgets/Qwidget>
 #include "../GUI/paintaim.h"
 #include "EmfPainter_global.h"
 

@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <QtCore/QFile>
 #include <QtCore/QTextStream>
-#include <QtGui/QApplication>
+#include <QtWidgets/QApplication>
 #include "bottomheatingsolver.h"
 
 //============================================================================================================

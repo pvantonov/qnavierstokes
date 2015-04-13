@@ -1,9 +1,9 @@
 #ifndef HELPWINDOW_H
 #define HELPWINDOW_H
 
-#include <QtGui/QLineEdit>
-#include <QtGui/QMainWindow>
-#include <QtWebKit/QWebView>
+#include <QtWidgets/QLineEdit>
+#include <QtWidgets/QMainWindow>
+#include <QtWebKitWidgets/QWebView>
 
 //!< Окно для просмотра справочной информации по программе.
 class HelpWindow : public QMainWindow

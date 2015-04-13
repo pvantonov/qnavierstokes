@@ -3,7 +3,7 @@
 #include <QtCore/QFile>
 #include <QtGui/QPainter>
 #include <QtGui/QPaintEngine>
-#include <QtGui/QApplication>
+#include <QtWidgets/QApplication>
 #include "emfpainter.h"
 
 //============================================================================================================
@@ -38,13 +38,14 @@ void EmfPainter::paintEmfFile(const QString& filepath)
         //Переводим QString в wchar_t.
         //************************************************************************************************
         WCHAR wcFilename[1000];
-        QByteArray cFilename = QString(filepath).toAscii();
+        QByteArray cFilename = QString(filepath).toLatin1();
         MultiByteToWideChar(CP_ACP, 0, cFilename.data(), strlen(cFilename.data())+1,
                             wcFilename, sizeof(wcFilename)/sizeof(wcFilename[0]));
 
         //************************************************************************************************
         //************************************************************************************************
-        HDC hdc = painter.paintEngine()->getDC();
+        HWND hwnd = (HWND)this->winId();
+        HDC hdc = GetDC(hwnd);
         HENHMETAFILE hemf = GetEnhMetaFile(wcFilename);
 
         ENHMETAHEADER header;
@@ -67,7 +68,6 @@ void EmfPainter::paintEmfFile(const QString& filepath)
         //************************************************************************************************
         PlayEnhMetaFile(hdc, hemf, &rect);
         DeleteEnhMetaFile(hemf);
-        painter.paintEngine()->releaseDC(hdc);
     }
 }
 

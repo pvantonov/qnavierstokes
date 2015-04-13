@@ -1,5 +1,5 @@
-#include <QtGui/QToolBar>
-#include <QtGui/QApplication>
+#include <QtWidgets/QToolBar>
+#include <QtWidgets/QApplication>
 #include "helpwindow.h"
 
 //============================================================================================================
