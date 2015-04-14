@@ -23,7 +23,7 @@
    </size>
   </property>
   <property name="windowTitle">
-   <string>Тестовая задача ЕГК   v1.0.0 beta6</string>
+   <string>Тестовая задача ЕГК   v1.5.0 alpha1</string>
   </property>
   <widget class="QWidget" name="centralWidget">
    <widget class="QFrame" name="solutionPainterFrame">
@@ -101,7 +101,16 @@
        <property name="rowWrapPolicy">
         <enum>QFormLayout::WrapAllRows</enum>
        </property>
-       <property name="margin">
+       <property name="leftMargin">
+        <number>0</number>
+       </property>
+       <property name="topMargin">
+        <number>0</number>
+       </property>
+       <property name="rightMargin">
+        <number>0</number>
+       </property>
+       <property name="bottomMargin">
         <number>0</number>
        </property>
        <item row="0" column="0">
@@ -325,8 +334,8 @@
       <rect>
        <x>0</x>
        <y>0</y>
-       <width>221</width>
-       <height>420</height>
+       <width>98</width>
+       <height>28</height>
       </rect>
      </property>
      <attribute name="label">
@@ -348,7 +357,16 @@
        <property name="rowWrapPolicy">
         <enum>QFormLayout::WrapAllRows</enum>
        </property>
-       <property name="margin">
+       <property name="leftMargin">
+        <number>0</number>
+       </property>
+       <property name="topMargin">
+        <number>0</number>
+       </property>
+       <property name="rightMargin">
+        <number>0</number>
+       </property>
+       <property name="bottomMargin">
         <number>0</number>
        </property>
        <item row="0" column="0">
@@ -515,8 +533,8 @@
       <rect>
        <x>0</x>
        <y>0</y>
-       <width>221</width>
-       <height>420</height>
+       <width>98</width>
+       <height>28</height>
       </rect>
      </property>
      <attribute name="label">
@@ -685,7 +703,7 @@
      <x>0</x>
      <y>0</y>
      <width>750</width>
-     <height>20</height>
+     <height>21</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu">
