@@ -187,17 +187,18 @@ void OpenGLPainter::processData()
 //============================================================================================================
 void OpenGLPainter::processDataFile(const QString& filepath)
 {
-    QFile file(filepath);
-    QTextStream iostream(&file);
-
     QList<double> f;
     QList< QVector<int> > nvtr;
     QList< QVector<double> > xy;
 
+    QTextStream iostream;
+
     //********************************************************************************************************
     //Считываем данные из файла
     //********************************************************************************************************
-    file.open(QIODevice::ReadOnly);
+    QFile solutionFile(filepath);
+    iostream.setDevice(&solutionFile);
+    solutionFile.open(QIODevice::ReadOnly);
     while(!iostream.atEnd())
     {
         double function;
@@ -207,7 +208,7 @@ void OpenGLPainter::processDataFile(const QString& filepath)
         f.append(function);
         xy.append(point);
     }
-    file.close();
+    solutionFile.close();
 
     //Последняя строчка в файлах пустая
     f.removeLast();
@@ -220,8 +221,9 @@ void OpenGLPainter::processDataFile(const QString& filepath)
     //Есть уже готовая информация о треугольниках. Просто считываем ее.
     if(QFile(qApp->applicationDirPath() + "/result/nvtr.dat").exists())
     {
-        file.setFileName(qApp->applicationDirPath() + "/result/nvtr.dat");
-        file.open(QIODevice::ReadOnly);
+        QFile femMeshFile(qApp->applicationDirPath() + "/result/nvtr.dat");
+        iostream.setDevice(&femMeshFile);
+        femMeshFile.open(QIODevice::ReadOnly);
         while(!iostream.atEnd())
         {
             QVector<int> triangle(3);
@@ -229,7 +231,7 @@ void OpenGLPainter::processDataFile(const QString& filepath)
             iostream >> triangle[0] >> triangle[1] >> triangle[2];
             nvtr.append(triangle);
         }
-        file.close();
+        femMeshFile.close();
 
         //Последняя строчка в файлах пустая
         nvtr.removeLast();
@@ -239,10 +241,11 @@ void OpenGLPainter::processDataFile(const QString& filepath)
     {
         int nx, ny;
 
-        file.setFileName(qApp->applicationDirPath() + "/result/net.dat");
-        file.open(QIODevice::ReadOnly);
+        QFile meshFile(qApp->applicationDirPath() + "/result/net.dat");
+        iostream.setDevice(&meshFile);
+        meshFile.open(QIODevice::ReadOnly);
         iostream >> nx >> ny;
-        file.close();
+        meshFile.close();
 
         for(int i = 0; i < ny - 1; i++)
             for(int j = 0; j < nx - 1; j++)
@@ -302,8 +305,9 @@ void OpenGLPainter::processDataFile(const QString& filepath)
     //Записываем файл с информацией о рисунке.
     //********************************************************************************************************
     //Сама функция
-    file.setFileName(filepath.left(filepath.size() - 4) + ".gl");
-    file.open(QIODevice::WriteOnly);
+    QFile preGlFile(filepath.left(filepath.size() - 4) + ".gl");
+    iostream.setDevice(&preGlFile);
+    preGlFile.open(QIODevice::WriteOnly);
     iostream << maxX << " " << maxY << endl;
     iostream << nvtr.size() << endl;
     for(int i = 0; i < nvtr.size(); i++)
@@ -350,5 +354,5 @@ void OpenGLPainter::processDataFile(const QString& filepath)
                 iostream << x[0] << " " << y[0] << " " << x[1] << " " << y[1] << endl;
         }
 
-    file.close();
+    preGlFile.close();
 }
