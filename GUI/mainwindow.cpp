@@ -184,7 +184,7 @@ void MainWindow::on_startButton_clicked()
 
     if(ui->tBCComboBox->currentIndex() == 0)
     {
-        solverSideHeating.setProblemParameters(ui->heightComboBox->currentText().toDouble(),
+        solverSideHeating.setProblemParameters(ui->heightComboBox->currentText().replace(',','.').toDouble(),
                                                ui->prandtlDoubleSpinBox->value(),
                                                ui->grashofDoubleSpinBox->value(),
                                                ui->leftWallCheckBox->isChecked(),
@@ -198,7 +198,7 @@ void MainWindow::on_startButton_clicked()
     }
     else
     {
-        solverBottomHeating.setProblemParameters(1.0/ui->heightComboBox->currentText().toDouble(),
+        solverBottomHeating.setProblemParameters(1.0/ui->heightComboBox->currentText().replace(',','.').toDouble(),
                                                  ui->prandtlDoubleSpinBox->value(),
                                                  ui->grashofDoubleSpinBox->value(),
                                                  ui->leftWallCheckBox->isChecked(),
