@@ -5,10 +5,10 @@
 #include <QtCore/QFile>
 #include <QtCore/QProcess>
 #include <QtCore/QTextStream>
+#include <QtCore/QSettings>
 #include <QtCore/QStringList>
 #include <QtWidgets/QVBoxLayout>
 #include <QtWidgets/QMessageBox>
-#include <QtXml/QDomDocument>
 #include "mainwindow.h"
 
 //============================================================================================================
@@ -39,16 +39,22 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     if(!QFile(qApp->applicationDirPath() + "/SurferScript.bas").exists())
         createSurferScript();
 
-    //********************************************************************************************************
+    //**********************************************************************************************
     //Загружаем настройки
-    //********************************************************************************************************
-    if(!QFile(qApp->applicationDirPath() + "/settings.xml").exists())
-        saveDefaultSettings();
-    loadSettings();
+    //**********************************************************************************************
+    QSettings settings;
 
-    curEngine = settings.paintEngin;
-    if(curEngine == Surfer)
-        ui->saveImageButton->setVisible(false);
+    this->ui->actionPrGr->setChecked(settings.value("restrict_Pr_Gr_value", true).toBool());
+    this->settings.useUniqFolders = settings.value("use_uniq_folders", false).toBool();
+    this->settings.pathToScripter = settings.value("path_to_scripter").toString();
+
+    this->settings.paintEngin = static_cast<PaintEngin>(settings.value("paint_engine", OpenGL).toInt());
+    this->settings.surferVersion = static_cast<SurferVersion>(settings.value("surfer_version", Surfer8).toInt());
+    this->settings.colorScheme = static_cast<ColorScheme>(settings.value("color_scheme", Rainbow).toInt());
+
+    this->curEngine = this->settings.paintEngin;
+    if(this->curEngine == Surfer)
+        this->ui->saveImageButton->setVisible(false);
 
     on_heightComboBox_currentIndexChanged(0);
     on_tBCComboBox_currentIndexChanged(0);
@@ -66,7 +72,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     }
     else
     {
-        glPainter = new OpenGLPainter(settings);
+        glPainter = new OpenGLPainter(this->settings);
         QVBoxLayout *solutionPainterLayout = new QVBoxLayout();
         solutionPainterLayout->addWidget(glPainter);
         solutionPainterLayout->setContentsMargins(0,0,0,0);
@@ -124,7 +130,8 @@ void MainWindow::on_actionPrGr_toggled(bool checked)
         ui->prandtlDoubleSpinBox->setToolTip(tr("Введите число от ") + QString::number(std::numeric_limits<double>::epsilon()) + tr(" до ") + QString::number(1e22));
         ui->grashofDoubleSpinBox->setToolTip(tr("Введите число от ") + QString::number(std::numeric_limits<double>::epsilon()) + tr(" до ") + QString::number(1e22));
     }
-    saveSettings();
+    QSettings settings;
+    settings.setValue("restrict_Pr_Gr_value", this->ui->actionPrGr->isChecked());
 }
 
 //============================================================================================================
@@ -367,206 +374,6 @@ void MainWindow::on_paintVyButton_clicked()
 }
 
 //============================================================================================================
-//Загрузка настроек.
-//============================================================================================================
-int MainWindow::loadSettings()
-{
-    //********************************************************************************************************
-    //Считываем настройки из файла.
-    //********************************************************************************************************
-    QDomDocument doc;
-    QFile file(qApp->applicationDirPath() + "/settings.xml");
-    if(!file.open(QIODevice::ReadOnly))
-        return 1;
-    if(!doc.setContent(&file))
-    {
-        file.close();
-        return 1;
-    }
-    file.close();
-
-    //********************************************************************************************************
-    //Присваиваем значения переменным настройки.
-    //********************************************************************************************************
-    ui->actionPrGr->setChecked(doc.documentElement().firstChildElement("restrict_Pr_Gr_value").text() == "true" ? true : false);
-    settings.useUniqFolders = doc.documentElement().firstChildElement("use_uniq_folders").text() == "true" ? true : false;
-    settings.pathToScripter = doc.documentElement().firstChildElement("path_to_scripter").text();
-    settings.paintEngin = doc.documentElement().firstChildElement("paint_engine").text() == "OpenGL" ? OpenGL : Surfer;
-    settings.surferVersion = doc.documentElement().firstChildElement("surfer_version").text() == "8" ? Surfer8 : Surfer9;
-
-    QString scheme = doc.documentElement().firstChildElement("color_scheme").text();
-    if(scheme == "Rainbow")
-        settings.colorScheme = Rainbow;
-    else if(scheme == "BlueRed")
-        settings.colorScheme = BlueRed;
-
-    return 0;
-}
-
-//============================================================================================================
-//Сохранение настроек.
-//============================================================================================================
-int MainWindow::saveSettings()
-{
-    //********************************************************************************************************
-    //Открываем файл настроек на запись.
-    //********************************************************************************************************
-    QFile file(qApp->applicationDirPath() + "/settings.xml");
-    if(!file.open(QIODevice::WriteOnly))
-        return 1;
-
-    //********************************************************************************************************
-    //********************************************************************************************************
-    QDomDocument doc;
-    QTextStream out(&file);
-
-    //********************************************************************************************************
-    //Создаем корневой тег.
-    //********************************************************************************************************
-    QDomElement root = doc.createElement("settings");
-    doc.appendChild(root);
-
-    //********************************************************************************************************
-    //Указываем значение настроек
-    //********************************************************************************************************
-    QDomText settingValue;
-    QDomElement settingValueElement;
-
-    settingValue = doc.createTextNode(ui->actionPrGr->isChecked() ? "true" : "false");
-    settingValueElement = doc.createElement("restrict_Pr_Gr_value");
-
-    settingValueElement.appendChild(settingValue);
-    root.appendChild(settingValueElement);
-
-    settingValue = doc.createTextNode(settings.useUniqFolders ? "true" : "false");
-    settingValueElement = doc.createElement("use_uniq_folders");
-
-    settingValueElement.appendChild(settingValue);
-    root.appendChild(settingValueElement);
-
-    settingValue = doc.createTextNode(settings.pathToScripter);
-    settingValueElement = doc.createElement("path_to_scripter");
-
-    settingValueElement.appendChild(settingValue);
-    root.appendChild(settingValueElement);
-
-    settingValue = doc.createTextNode(settings.paintEngin == OpenGL ? "OpenGL" : "Surfer");
-    settingValueElement = doc.createElement("paint_engine");
-
-    settingValueElement.appendChild(settingValue);
-    root.appendChild(settingValueElement);
-
-    if(settings.colorScheme == BlueRed)
-        settingValue = doc.createTextNode("BlueRed");
-    else if(settings.colorScheme == Rainbow)
-        settingValue = doc.createTextNode("Rainbow");
-    settingValueElement = doc.createElement("color_scheme");
-
-    settingValueElement.appendChild(settingValue);
-    root.appendChild(settingValueElement);
-
-    settingValue = doc.createTextNode(settings.surferVersion == Surfer8 ? "8" : "9");
-    settingValueElement = doc.createElement("surfer_version");
-
-    settingValueElement.appendChild(settingValue);
-    root.appendChild(settingValueElement);
-
-    //********************************************************************************************************
-    //Указываем техническую информацию о файле настроек.
-    //********************************************************************************************************
-    QDomNode xml_node = doc.createProcessingInstruction("xml","version=\"1.0\" encoding=\"windows-1251\"");
-    doc.insertBefore(xml_node,doc.firstChild());
-
-    //********************************************************************************************************
-    //Записываем настройки в файл.
-    //********************************************************************************************************
-    doc.save(out,4);
-    file.close();
-
-    return 0;
-}
-
-//============================================================================================================
-//Сохранение настроек по умолчанию. Вызывается при запуске программы если не обнаружен файл настроек.
-//============================================================================================================
-int MainWindow::saveDefaultSettings()
-{
-    //********************************************************************************************************
-    //Открываем файл настроек на запись.
-    //********************************************************************************************************
-    QFile file(qApp->applicationDirPath() + "/settings.xml");
-    if(!file.open(QIODevice::WriteOnly))
-        return 1;
-
-    //********************************************************************************************************
-    //********************************************************************************************************
-    QDomDocument doc;
-    QTextStream out(&file);
-
-    //********************************************************************************************************
-    //Создаем корневой тег.
-    //********************************************************************************************************
-    QDomElement root = doc.createElement("settings");
-    doc.appendChild(root);
-
-    //********************************************************************************************************
-    //Указываем значение настроек по умолчанию.
-    //********************************************************************************************************
-    QDomText settingValue;
-    QDomElement settingValueElement;
-
-    settingValue = doc.createTextNode("true");
-    settingValueElement = doc.createElement("restrict_Pr_Gr_value");
-
-    settingValueElement.appendChild(settingValue);
-    root.appendChild(settingValueElement);
-
-    settingValue = doc.createTextNode("false");
-    settingValueElement = doc.createElement("use_uniq_folders");
-
-    settingValueElement.appendChild(settingValue);
-    root.appendChild(settingValueElement);
-
-    settingValue = doc.createTextNode("C:/Program Files/Golden Software/Surfer8/Scripter/Scripter.exe");
-    settingValueElement = doc.createElement("path_to_scripter");
-
-    settingValueElement.appendChild(settingValue);
-    root.appendChild(settingValueElement);
-
-    settingValue = doc.createTextNode("OpenGL");
-    settingValueElement = doc.createElement("paint_engine");
-
-    settingValueElement.appendChild(settingValue);
-    root.appendChild(settingValueElement);
-
-    settingValue = doc.createTextNode("Rainbow");
-    settingValueElement = doc.createElement("color_scheme");
-
-    settingValueElement.appendChild(settingValue);
-    root.appendChild(settingValueElement);
-
-    settingValue = doc.createTextNode("8");
-    settingValueElement = doc.createElement("surfer_version");
-
-    settingValueElement.appendChild(settingValue);
-    root.appendChild(settingValueElement);
-
-    //********************************************************************************************************
-    //Указываем техническую информацию о файле настроек.
-    //********************************************************************************************************
-    QDomNode xml_node = doc.createProcessingInstruction("xml","version=\"1.0\" encoding=\"windows-1251\"");
-    doc.insertBefore(xml_node,doc.firstChild());
-
-    //********************************************************************************************************
-    //Записываем настройки в файл.
-    //********************************************************************************************************
-    doc.save(out,4);
-    file.close();
-
-    return 0;
-}
-
-//============================================================================================================
 //Создать скрипт Surfer'а для обработки результатов.
 //============================================================================================================
 int MainWindow::createSurferScript()
@@ -595,7 +402,7 @@ int MainWindow::createSurferScript()
         output << "ImageMap.Overlays(1).ColorMap.LoadFile(FileName:=SurferApp.Path+\"/Samples/Rainbow.clr\")" << endl;
     else
         output << "ImageMap.Overlays(1).ColorMap.LoadFile(FileName:=SurferApp.Path+\"/ColorScales/Rainbow.clr\")" << endl;
-    output << "Doc.Export(\"" + qApp->applicationDirPath() + "/result/T.emf\")" << endl;
+    output << "Doc.Export(\"" + qApp->applicationDirPath() + "/result/T.svg\")" << endl;
     output << "ImageMap.Visible = False" << endl;
     output << "ContourMap.Visible = False" << endl;
     output << "SurferApp.GridData(\"" + qApp->applicationDirPath() + "/result/Psi.dat\", Algorithm:=srfTriangulation, ShowReport:=False, OutGrid:=\"" + qApp->applicationDirPath() + "/tmp/grid\")" << endl;
@@ -605,7 +412,7 @@ int MainWindow::createSurferScript()
         output << "ImageMap.Overlays(1).ColorMap.LoadFile(FileName:=SurferApp.Path+\"/Samples/Rainbow.clr\")" << endl;
     else
         output << "ImageMap.Overlays(1).ColorMap.LoadFile(FileName:=SurferApp.Path+\"/ColorScales/Rainbow.clr\")" << endl;
-    output << "Doc.Export(\"" + qApp->applicationDirPath() + "/result/Psi.emf\")" << endl;
+    output << "Doc.Export(\"" + qApp->applicationDirPath() + "/result/Psi.svg\")" << endl;
     output << "ImageMap.Visible = False" << endl;
     output << "ContourMap.Visible = False" << endl;
 
@@ -616,7 +423,7 @@ int MainWindow::createSurferScript()
         output << "ImageMap.Overlays(1).ColorMap.LoadFile(FileName:=SurferApp.Path+\"/Samples/Rainbow.clr\")" << endl;
     else
         output << "ImageMap.Overlays(1).ColorMap.LoadFile(FileName:=SurferApp.Path+\"/ColorScales/Rainbow.clr\")" << endl;
-    output << "Doc.Export(\"" + qApp->applicationDirPath() + "/result/Omega.emf\")" << endl;
+    output << "Doc.Export(\"" + qApp->applicationDirPath() + "/result/Omega.svg\")" << endl;
     output << "ImageMap.Visible = False" << endl;
     output << "ContourMap.Visible = False" << endl;
 
@@ -627,7 +434,7 @@ int MainWindow::createSurferScript()
         output << "ImageMap.Overlays(1).ColorMap.LoadFile(FileName:=SurferApp.Path+\"/Samples/Rainbow.clr\")" << endl;
     else
         output << "ImageMap.Overlays(1).ColorMap.LoadFile(FileName:=SurferApp.Path+\"/ColorScales/Rainbow.clr\")" << endl;
-    output << "Doc.Export(\"" + qApp->applicationDirPath() + "/result/Vx.emf\")" << endl;
+    output << "Doc.Export(\"" + qApp->applicationDirPath() + "/result/Vx.svg\")" << endl;
     output << "ImageMap.Visible = False" << endl;
     output << "ContourMap.Visible = False" << endl;
 
@@ -638,7 +445,7 @@ int MainWindow::createSurferScript()
         output << "ImageMap.Overlays(1).ColorMap.LoadFile(FileName:=SurferApp.Path+\"/Samples/Rainbow.clr\")" << endl;
     else
         output << "ImageMap.Overlays(1).ColorMap.LoadFile(FileName:=SurferApp.Path+\"/ColorScales/Rainbow.clr\")" << endl;
-    output << "Doc.Export(\"" + qApp->applicationDirPath() + "/result/Vy.emf\")" << endl;
+    output << "Doc.Export(\"" + qApp->applicationDirPath() + "/result/Vy.svg\")" << endl;
     output << "ImageMap.Visible = False" << endl;
     output << "ContourMap.Visible = False" << endl;
 
@@ -721,10 +528,16 @@ void MainWindow::showSettingsWindow()
 //============================================================================================================
 void MainWindow::getSettings()
 {
-    settings = settingsWindow->getSettings();
+    this->settings = settingsWindow->getSettings();
     if(curEngine == OpenGL)
-        glPainter->setColorScheme(settings.colorScheme);
-    saveSettings();
+        glPainter->setColorScheme(this->settings.colorScheme);
+
+    QSettings settings;
+    settings.setValue("use_uniq_folders", this->settings.useUniqFolders);
+    settings.setValue("path_to_scripter", this->settings.pathToScripter);
+    settings.setValue("paint_engine", this->settings.paintEngin);
+    settings.setValue("color_scheme", this->settings.colorScheme);
+    settings.setValue("surfer_version", this->settings.surferVersion);
 }
 
 //============================================================================================================

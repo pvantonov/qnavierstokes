@@ -23,7 +23,7 @@
    </size>
   </property>
   <property name="windowTitle">
-   <string>Тестовая задача ЕГК   v1.5.0 alpha1</string>
+   <string>Тестовая задача ЕГК   v1.5.0 alpha2</string>
   </property>
   <widget class="QWidget" name="centralWidget">
    <widget class="QFrame" name="solutionPainterFrame">

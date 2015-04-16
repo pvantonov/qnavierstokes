@@ -1,6 +1,4 @@
-#ifndef MAINWINDOW_H
-#define MAINWINDOW_H
-
+#pragma once
 #include <QtWidgets/QMainWindow>
 #include "settings.h"
 #include "helpwindow.h"
@@ -94,18 +92,6 @@ private:
     SideHeatingSolver solverSideHeating;
     BottomHeatingSolver solverBottomHeating;
 
-
-    //! Загрузить настройки программы из файла.
-    int loadSettings();
-
-    //! Сохранить настройки программы в файл.
-    int saveSettings();
-
-    //! Сохранить настройки по умолчанию в файл.
-    int saveDefaultSettings();
-
     //! Создать скрипт Surfer'а для обработки результатов.
     int createSurferScript();
 };
-
-#endif // MAINWINDOW_H

@@ -1,6 +1,4 @@
-#ifndef SETTINGS_H
-#define SETTINGS_H
-
+#pragma once
 #include <QtCore/QString>
 #include "../ColorScale/colorscale.h"
 
@@ -29,5 +27,3 @@ struct Settings
 
     SurferVersion surferVersion;//!< Версия Surfer
 };
-
-#endif // SETTINGS_H
