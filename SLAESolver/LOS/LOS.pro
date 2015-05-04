@@ -1,21 +1,15 @@
 QT -= gui
 TEMPLATE = lib
+DESTDIR = $$ROOT_BUILDDIR/app/libs
+DLLDESTDIR = $$ROOT_BUILDDIR/app
 DEFINES += LOS_LIBRARY
 SOURCES += los.cpp
 HEADERS += los.h\
         LOS_global.h
 
-win32:CONFIG(release, debug|release): LIBS += -L$$OUT_PWD/../../MatrixTools/CSRTools/release/ -lCSRTools
-else:win32:CONFIG(debug, debug|release): LIBS += -L$$OUT_PWD/../../MatrixTools/CSRTools/debug/ -lCSRTools
-
-INCLUDEPATH += $$PWD/../../MatrixTools/CSRTools
-DEPENDPATH += $$PWD/../../MatrixTools/CSRTools
-
-win32:CONFIG(release, debug|release): LIBS += -L$$OUT_PWD/../Gauss/release/ -lGauss
-else:win32:CONFIG(debug, debug|release): LIBS += -L$$OUT_PWD/../Gauss/debug/ -lGauss
-
-INCLUDEPATH += $$PWD/../Gauss
-DEPENDPATH += $$PWD/../Gauss
-
-win32:CONFIG(release, debug|release): DESTDIR += $$OUT_PWD/../../GUI/release/
-else:win32:CONFIG(debug, debug|release): DESTDIR += $$OUT_PWD/../../GUI/debug/
+INCLUDEPATH += $$ROOT_SRCDIR/MatrixTools/CSRTools \
+    $$ROOT_SRCDIR/Gauss
+DEPENDPATH += $$ROOT_SRCDIR/MatrixTools/CSRTools \
+    $$ROOT_SRCDIR/Gauss
+LIBS += -L$$ROOT_BUILDDIR/app/libs -lCSRTools \
+    -L$$ROOT_BUILDDIR/app/libs -lGauss

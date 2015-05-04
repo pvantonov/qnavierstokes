@@ -1,15 +1,12 @@
-QT       += opengl
+QT += opengl
 TEMPLATE = lib
+DESTDIR = $$ROOT_BUILDDIR/app/libs
+DLLDESTDIR = $$ROOT_BUILDDIR/app
 DEFINES += OPENGLPAINTER_LIBRARY
 SOURCES += openglpainter.cpp
 HEADERS += openglpainter.h\
         OpenGLPainter_global.h
 
-win32:CONFIG(release, debug|release): LIBS += -L$$OUT_PWD/../ColorScale/release/ -lColorScale
-else:win32:CONFIG(debug, debug|release): LIBS += -L$$OUT_PWD/../ColorScale/debug/ -lColorScale
-
-INCLUDEPATH += $$PWD/../ColorScale
-DEPENDPATH += $$PWD/../ColorScale
-
-win32:CONFIG(release, debug|release): DESTDIR += $$OUT_PWD/../GUI/release/
-else:win32:CONFIG(debug, debug|release): DESTDIR += $$OUT_PWD/../GUI/debug/
+INCLUDEPATH += $$ROOT_SRCDIR/ColorScale
+DEPENDPATH += $$ROOT_SRCDIR/ColorScale
+LIBS += -L$$ROOT_BUILDDIR/app/libs -lColorScale
