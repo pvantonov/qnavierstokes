@@ -653,7 +653,7 @@ void SideHeatingSolver::formV()
     //считаем x-компоненту скорсти
     for(int i = 0; i < (ny - 1)*nx; i++)
         vx[i] = (psi[i + nx] - psi[i])/hy;
-    for(int i = (ny - 1)*nx; i < ny*nx - 1; i++)
+    for(int i = (ny - 1)*nx; i < ny*nx; i++)
         vx[i] = vx[i - nx];
 
     //считаем y-компоненту скорости
@@ -669,7 +669,7 @@ void SideHeatingSolver::formV()
             vx[i] = 0;
 
     if(isTopWallHard)
-        for(int i = (ny - 1)*nx; i < ny*nx - 1; i++)
+        for(int i = (ny - 1)*nx; i < ny*nx; i++)
             vx[i] = 0;
 
     if(isLeftWallHard)
