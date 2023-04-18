@@ -5,7 +5,7 @@
 //============================================================================================================
 ColorScale::ColorScale()
 {
-    initScale(0,1,BlueRed);
+    initScale(0, 1, ColorScheme::BlueRed);
 }
 
 //============================================================================================================
@@ -44,13 +44,13 @@ void ColorScale::initScale(double min, double max, ColorScheme scheme)
 
     switch(scheme)
     {
-    case BlueRed:
+    case ColorScheme::BlueRed:
         colors.append(Qt::blue);
         colors.append(Qt::red);
         values.append(min);
         values.append(max);
         break;
-    case Rainbow:
+    case ColorScheme::Rainbow:
         values.append(min);
         values.append(min + 1.*(max - min)/5.);
         values.append(min + 2.*(max - min)/5.);

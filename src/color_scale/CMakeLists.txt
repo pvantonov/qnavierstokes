@@ -4,6 +4,7 @@ add_library(color_scale STATIC
 )
 
 target_link_libraries(color_scale PRIVATE
+    settings
     Qt6::Gui
 )
 

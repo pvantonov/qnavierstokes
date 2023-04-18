@@ -1,8 +1,8 @@
 #pragma once
 #include <QtOpenGLWidgets/QOpenGLWidget>
 #include "../app/paint_aim.hpp"
-#include "../app/settings.hpp"
 #include <color_scale.hpp>
+#include <settings.hpp>
 
 class OpenGLPainter : public QOpenGLWidget
 {
@@ -13,7 +13,7 @@ public:
      *  \param settings Набор настроек программы.
      *  \param[in] parent Указатель на родительский виджет.
      */
-    OpenGLPainter(Settings settings, QWidget *parent = 0);
+    OpenGLPainter(QWidget *parent = 0);
 
     //! Обработка результатов расчета для ускорения последующей отрисовки.
     void processData();

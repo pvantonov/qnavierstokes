@@ -10,10 +10,6 @@ add_executable(qnavierstokes
     main_window.hpp
     main_window.ui
     paint_aim.hpp
-    settings.hpp
-    settings_window.cpp
-    settings_window.hpp
-    settings_window.ui
 )
 
 target_link_libraries(qnavierstokes PRIVATE
@@ -22,9 +18,9 @@ target_link_libraries(qnavierstokes PRIVATE
     opengl_painter
     side_heating
     color_scale
+    settings
     Qt6::Widgets
     Qt6::WebEngineWidgets
-    Qt6::Xml
 )
 
 set_target_properties(qnavierstokes PROPERTIES

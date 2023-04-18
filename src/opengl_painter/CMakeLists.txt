@@ -5,6 +5,7 @@ add_library(opengl_painter STATIC
 
 target_link_libraries(opengl_painter PRIVATE
     color_scale
+    settings
     ${OPENGL_LIBRARIES}
     Qt6::Core
     Qt6::Gui

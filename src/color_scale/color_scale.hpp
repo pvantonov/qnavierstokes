@@ -1,12 +1,6 @@
 #pragma once
 #include <QtGui/QColor>
-
-//! Цветовая схема. Определяет какая цветовая гамма будет использоваться классом ColorScale.
-enum ColorScheme
-{
-    BlueRed,
-    Rainbow
-};
+#include <settings.hpp>
 
 //! Цветовая шкала. Т.е. набор пар "значение функции-цвет".
 class ColorScale

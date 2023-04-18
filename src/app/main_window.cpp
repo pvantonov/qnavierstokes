@@ -8,19 +8,19 @@
 #include <QtCore/QStringList>
 #include <QtWidgets/QVBoxLayout>
 #include <QtWidgets/QMessageBox>
-#include <QtXml/QDomDocument>
+#include <settings.hpp>
+#include <settings_manager.hpp>
 #include "main_window.hpp"
 
 //============================================================================================================
 //============================================================================================================
-MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWindow)
+MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWindow), settingsWindow(new SettingsWindow(this))
 {
     ui->setupUi(this);
 
     //********************************************************************************************************
     //Создаем окно настроек и окно с информацией о программе.
     //********************************************************************************************************
-    settingsWindow = new SettingsWindow(this);
     aboutWindow = new AboutWindow(this);
     helpWindow = new HelpWindow();
 
@@ -34,20 +34,11 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         QDir(qApp->applicationDirPath()).mkdir("tmp");
 
     //********************************************************************************************************
-    //При необходимости создаем скрипт Surfer'а
-    //********************************************************************************************************
-    if(!QFile(qApp->applicationDirPath() + "/SurferScript.bas").exists())
-        createSurferScript();
-
-    //********************************************************************************************************
     //Загружаем настройки
     //********************************************************************************************************
-    if(!QFile(qApp->applicationDirPath() + "/settings.xml").exists())
-        saveDefaultSettings();
-    loadSettings();
 
-    curEngine = settings.paintEngin;
-    if(curEngine == Surfer)
+    auto settings = SettingsManager::instance().settings();
+    if(settings.paintEngine == PaintEngine::Surfer)
         ui->saveImageButton->setVisible(false);
 
     on_heightComboBox_currentIndexChanged(0);
@@ -56,7 +47,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     //********************************************************************************************************
     //Создаем виджет отрисовки результата
     //********************************************************************************************************
-    if(curEngine == Surfer)
+    if(settings.paintEngine == PaintEngine::Surfer)
     {
         emfPainter = new EmfPainter();
         QVBoxLayout *solutionPainterLayout = new QVBoxLayout();
@@ -66,7 +57,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     }
     else
     {
-        glPainter = new OpenGLPainter(settings);
+        glPainter = new OpenGLPainter();
         QVBoxLayout *solutionPainterLayout = new QVBoxLayout();
         solutionPainterLayout->addWidget(glPainter);
         solutionPainterLayout->setContentsMargins(0,0,0,0);
@@ -80,7 +71,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     connect(ui->helpAction,SIGNAL(triggered()),helpWindow,SLOT(show()));
     connect(ui->aboutAction,SIGNAL(triggered()),aboutWindow,SLOT(show()));
     connect(ui->settingsAction,SIGNAL(triggered()),this,SLOT(showSettingsWindow()));
-    connect(settingsWindow,SIGNAL(settingsUpdated()),this,SLOT(getSettings()));
 
     connect(&solverSideHeating,SIGNAL(solutionFinished()),this,SLOT(onSolverFinished()));
     connect(&solverBottomHeating,SIGNAL(solutionFinished()),this,SLOT(onSolverFinished()));
@@ -124,7 +114,10 @@ void MainWindow::on_actionPrGr_toggled(bool checked)
         ui->prandtlDoubleSpinBox->setToolTip(tr("Введите число от ") + QString::number(std::numeric_limits<double>::epsilon()) + tr(" до ") + QString::number(1e22));
         ui->grashofDoubleSpinBox->setToolTip(tr("Введите число от ") + QString::number(std::numeric_limits<double>::epsilon()) + tr(" до ") + QString::number(1e22));
     }
-    saveSettings();
+    auto settings = SettingsManager::instance().settings();
+    auto newSettings(settings);
+    newSettings.limitPrGr = checked;
+    SettingsManager::instance().setSettings(newSettings);
 }
 
 //============================================================================================================
@@ -146,41 +139,6 @@ void MainWindow::on_startButton_clicked()
     //********************************************************************************************************
     ui->startButton->setDisabled(true);
     ui->settingsAction->setDisabled(true);
-
-    //********************************************************************************************************
-    //На основе параметров задачи формируем уникальное имя папки для результата.
-    //********************************************************************************************************
-    if(ui->tBCComboBox->currentIndex() == 0)
-        uniqFoldername = "s";
-    else
-        uniqFoldername = "b";
-
-    uniqFoldername += ui->heightComboBox->currentText();
-
-    uniqFoldername += "_[Pr";
-    uniqFoldername += QString::number(ui->prandtlDoubleSpinBox->value());
-    uniqFoldername += ";Gr";
-    uniqFoldername += QString::number(ui->grashofDoubleSpinBox->value());
-    uniqFoldername += "][";
-    uniqFoldername += "t" + QString::number(ui->topWallCheckBox->isChecked());
-    uniqFoldername += ";";
-    uniqFoldername += "l" + QString::number(ui->leftWallCheckBox->isChecked());
-    uniqFoldername += ";";
-    uniqFoldername += "r" + QString::number(ui->rightWallCheckBox->isChecked());
-    uniqFoldername += ";";
-    uniqFoldername += "b" + QString::number(ui->bottomWallCheckBox->isChecked());
-    uniqFoldername += "][";
-    uniqFoldername += QString::number(ui->nxSpinBox->value());
-    uniqFoldername += "x";
-    uniqFoldername += QString::number(ui->nySpinBox->value());
-    uniqFoldername += "][";
-    uniqFoldername += QString::number(ui->wTDoubleSpinBox->value());
-    uniqFoldername += ";";
-    uniqFoldername += QString::number(ui->wPsiDoubleSpinBox->value());
-    uniqFoldername += ";";
-    uniqFoldername += QString::number(ui->wOmegaDoubleSpinBox->value());
-    uniqFoldername += "]_";
-    uniqFoldername += QString::number(ui->maxIterSpinBox->value());
 
     if(ui->tBCComboBox->currentIndex() == 0)
     {
@@ -217,7 +175,9 @@ void MainWindow::on_startButton_clicked()
 //============================================================================================================
 void MainWindow::onSolverFinished()
 {
-    if(curEngine == Surfer)
+    auto settings = SettingsManager::instance().settings();
+
+    if(settings.paintEngine == PaintEngine::Surfer)
     {
         if(QFile(settings.pathToScripter).exists())
         {
@@ -237,8 +197,45 @@ void MainWindow::onSolverFinished()
     //********************************************************************************************************
     //Копируем результаты в уникальную папку.
     //********************************************************************************************************
-    if(settings.useUniqFolders == true)
+    if(settings.useUniqueFolders == true)
     {
+        QString uniqFoldername;
+
+        //********************************************************************************************************
+        //На основе параметров задачи формируем уникальное имя папки для результата.
+        //********************************************************************************************************
+        if(ui->tBCComboBox->currentIndex() == 0)
+            uniqFoldername = "s";
+        else
+            uniqFoldername = "b";
+
+        uniqFoldername += ui->heightComboBox->currentText();
+
+        uniqFoldername += "_[Pr";
+        uniqFoldername += QString::number(ui->prandtlDoubleSpinBox->value());
+        uniqFoldername += ";Gr";
+        uniqFoldername += QString::number(ui->grashofDoubleSpinBox->value());
+        uniqFoldername += "][";
+        uniqFoldername += "t" + QString::number(ui->topWallCheckBox->isChecked());
+        uniqFoldername += ";";
+        uniqFoldername += "l" + QString::number(ui->leftWallCheckBox->isChecked());
+        uniqFoldername += ";";
+        uniqFoldername += "r" + QString::number(ui->rightWallCheckBox->isChecked());
+        uniqFoldername += ";";
+        uniqFoldername += "b" + QString::number(ui->bottomWallCheckBox->isChecked());
+        uniqFoldername += "][";
+        uniqFoldername += QString::number(ui->nxSpinBox->value());
+        uniqFoldername += "x";
+        uniqFoldername += QString::number(ui->nySpinBox->value());
+        uniqFoldername += "][";
+        uniqFoldername += QString::number(ui->wTDoubleSpinBox->value());
+        uniqFoldername += ";";
+        uniqFoldername += QString::number(ui->wPsiDoubleSpinBox->value());
+        uniqFoldername += ";";
+        uniqFoldername += QString::number(ui->wOmegaDoubleSpinBox->value());
+        uniqFoldername += "]_";
+        uniqFoldername += QString::number(ui->maxIterSpinBox->value());
+
         if(!QDir(qApp->applicationDirPath() + "/result/" + uniqFoldername).exists())
             QDir(qApp->applicationDirPath() + "/result").mkdir(uniqFoldername);
         else
@@ -328,7 +325,8 @@ void MainWindow::on_heightComboBox_currentIndexChanged(int index)
 //============================================================================================================
 void MainWindow::on_paintTButton_clicked()
 {
-    if(curEngine == Surfer)
+    auto settings = SettingsManager::instance().settings();
+    if(settings.paintEngine == PaintEngine::Surfer)
         emfPainter->setPaintAim(T);
     else
         glPainter->setPaintAim(T);
@@ -336,7 +334,8 @@ void MainWindow::on_paintTButton_clicked()
 
 void MainWindow::on_paintPsiButton_clicked()
 {
-    if(curEngine == Surfer)
+    auto settings = SettingsManager::instance().settings();
+    if(settings.paintEngine == PaintEngine::Surfer)
         emfPainter->setPaintAim(Psi);
     else
         glPainter->setPaintAim(Psi);
@@ -344,7 +343,8 @@ void MainWindow::on_paintPsiButton_clicked()
 
 void MainWindow::on_paintOmegaButton_clicked()
 {
-    if(curEngine == Surfer)
+    auto settings = SettingsManager::instance().settings();
+    if(settings.paintEngine == PaintEngine::Surfer)
         emfPainter->setPaintAim(Omega);
     else
         glPainter->setPaintAim(Omega);
@@ -352,7 +352,8 @@ void MainWindow::on_paintOmegaButton_clicked()
 
 void MainWindow::on_paintVxButton_clicked()
 {
-    if(curEngine == Surfer)
+    auto settings = SettingsManager::instance().settings();
+    if(settings.paintEngine == PaintEngine::Surfer)
         emfPainter->setPaintAim(Vx);
     else
         glPainter->setPaintAim(Vx);
@@ -360,210 +361,11 @@ void MainWindow::on_paintVxButton_clicked()
 
 void MainWindow::on_paintVyButton_clicked()
 {
-    if(curEngine == Surfer)
+    auto settings = SettingsManager::instance().settings();
+    if(settings.paintEngine == PaintEngine::Surfer)
         emfPainter->setPaintAim(Vy);
     else
         glPainter->setPaintAim(Vy);
-}
-
-//============================================================================================================
-//Загрузка настроек.
-//============================================================================================================
-int MainWindow::loadSettings()
-{
-    //********************************************************************************************************
-    //Считываем настройки из файла.
-    //********************************************************************************************************
-    QDomDocument doc;
-    QFile file(qApp->applicationDirPath() + "/settings.xml");
-    if(!file.open(QIODevice::ReadOnly))
-        return 1;
-    if(!doc.setContent(&file))
-    {
-        file.close();
-        return 1;
-    }
-    file.close();
-
-    //********************************************************************************************************
-    //Присваиваем значения переменным настройки.
-    //********************************************************************************************************
-    ui->actionPrGr->setChecked(doc.documentElement().firstChildElement("restrict_Pr_Gr_value").text() == "true" ? true : false);
-    settings.useUniqFolders = doc.documentElement().firstChildElement("use_uniq_folders").text() == "true" ? true : false;
-    settings.pathToScripter = doc.documentElement().firstChildElement("path_to_scripter").text();
-    settings.paintEngin = doc.documentElement().firstChildElement("paint_engine").text() == "OpenGL" ? OpenGL : Surfer;
-    settings.surferVersion = doc.documentElement().firstChildElement("surfer_version").text() == "8" ? Surfer8 : Surfer9;
-
-    QString scheme = doc.documentElement().firstChildElement("color_scheme").text();
-    if(scheme == "Rainbow")
-        settings.colorScheme = Rainbow;
-    else if(scheme == "BlueRed")
-        settings.colorScheme = BlueRed;
-
-    return 0;
-}
-
-//============================================================================================================
-//Сохранение настроек.
-//============================================================================================================
-int MainWindow::saveSettings()
-{
-    //********************************************************************************************************
-    //Открываем файл настроек на запись.
-    //********************************************************************************************************
-    QFile file(qApp->applicationDirPath() + "/settings.xml");
-    if(!file.open(QIODevice::WriteOnly))
-        return 1;
-
-    //********************************************************************************************************
-    //********************************************************************************************************
-    QDomDocument doc;
-    QTextStream out(&file);
-
-    //********************************************************************************************************
-    //Создаем корневой тег.
-    //********************************************************************************************************
-    QDomElement root = doc.createElement("settings");
-    doc.appendChild(root);
-
-    //********************************************************************************************************
-    //Указываем значение настроек
-    //********************************************************************************************************
-    QDomText settingValue;
-    QDomElement settingValueElement;
-
-    settingValue = doc.createTextNode(ui->actionPrGr->isChecked() ? "true" : "false");
-    settingValueElement = doc.createElement("restrict_Pr_Gr_value");
-
-    settingValueElement.appendChild(settingValue);
-    root.appendChild(settingValueElement);
-
-    settingValue = doc.createTextNode(settings.useUniqFolders ? "true" : "false");
-    settingValueElement = doc.createElement("use_uniq_folders");
-
-    settingValueElement.appendChild(settingValue);
-    root.appendChild(settingValueElement);
-
-    settingValue = doc.createTextNode(settings.pathToScripter);
-    settingValueElement = doc.createElement("path_to_scripter");
-
-    settingValueElement.appendChild(settingValue);
-    root.appendChild(settingValueElement);
-
-    settingValue = doc.createTextNode(settings.paintEngin == OpenGL ? "OpenGL" : "Surfer");
-    settingValueElement = doc.createElement("paint_engine");
-
-    settingValueElement.appendChild(settingValue);
-    root.appendChild(settingValueElement);
-
-    if(settings.colorScheme == BlueRed)
-        settingValue = doc.createTextNode("BlueRed");
-    else if(settings.colorScheme == Rainbow)
-        settingValue = doc.createTextNode("Rainbow");
-    settingValueElement = doc.createElement("color_scheme");
-
-    settingValueElement.appendChild(settingValue);
-    root.appendChild(settingValueElement);
-
-    settingValue = doc.createTextNode(settings.surferVersion == Surfer8 ? "8" : "9");
-    settingValueElement = doc.createElement("surfer_version");
-
-    settingValueElement.appendChild(settingValue);
-    root.appendChild(settingValueElement);
-
-    //********************************************************************************************************
-    //Указываем техническую информацию о файле настроек.
-    //********************************************************************************************************
-    QDomNode xml_node = doc.createProcessingInstruction("xml","version=\"1.0\" encoding=\"windows-1251\"");
-    doc.insertBefore(xml_node,doc.firstChild());
-
-    //********************************************************************************************************
-    //Записываем настройки в файл.
-    //********************************************************************************************************
-    doc.save(out,4);
-    file.close();
-
-    return 0;
-}
-
-//============================================================================================================
-//Сохранение настроек по умолчанию. Вызывается при запуске программы если не обнаружен файл настроек.
-//============================================================================================================
-int MainWindow::saveDefaultSettings()
-{
-    //********************************************************************************************************
-    //Открываем файл настроек на запись.
-    //********************************************************************************************************
-    QFile file(qApp->applicationDirPath() + "/settings.xml");
-    if(!file.open(QIODevice::WriteOnly))
-        return 1;
-
-    //********************************************************************************************************
-    //********************************************************************************************************
-    QDomDocument doc;
-    QTextStream out(&file);
-
-    //********************************************************************************************************
-    //Создаем корневой тег.
-    //********************************************************************************************************
-    QDomElement root = doc.createElement("settings");
-    doc.appendChild(root);
-
-    //********************************************************************************************************
-    //Указываем значение настроек по умолчанию.
-    //********************************************************************************************************
-    QDomText settingValue;
-    QDomElement settingValueElement;
-
-    settingValue = doc.createTextNode("true");
-    settingValueElement = doc.createElement("restrict_Pr_Gr_value");
-
-    settingValueElement.appendChild(settingValue);
-    root.appendChild(settingValueElement);
-
-    settingValue = doc.createTextNode("false");
-    settingValueElement = doc.createElement("use_uniq_folders");
-
-    settingValueElement.appendChild(settingValue);
-    root.appendChild(settingValueElement);
-
-    settingValue = doc.createTextNode("C:/Program Files/Golden Software/Surfer8/Scripter/Scripter.exe");
-    settingValueElement = doc.createElement("path_to_scripter");
-
-    settingValueElement.appendChild(settingValue);
-    root.appendChild(settingValueElement);
-
-    settingValue = doc.createTextNode("OpenGL");
-    settingValueElement = doc.createElement("paint_engine");
-
-    settingValueElement.appendChild(settingValue);
-    root.appendChild(settingValueElement);
-
-    settingValue = doc.createTextNode("Rainbow");
-    settingValueElement = doc.createElement("color_scheme");
-
-    settingValueElement.appendChild(settingValue);
-    root.appendChild(settingValueElement);
-
-    settingValue = doc.createTextNode("8");
-    settingValueElement = doc.createElement("surfer_version");
-
-    settingValueElement.appendChild(settingValue);
-    root.appendChild(settingValueElement);
-
-    //********************************************************************************************************
-    //Указываем техническую информацию о файле настроек.
-    //********************************************************************************************************
-    QDomNode xml_node = doc.createProcessingInstruction("xml","version=\"1.0\" encoding=\"windows-1251\"");
-    doc.insertBefore(xml_node,doc.firstChild());
-
-    //********************************************************************************************************
-    //Записываем настройки в файл.
-    //********************************************************************************************************
-    doc.save(out,4);
-    file.close();
-
-    return 0;
 }
 
 //============================================================================================================
@@ -571,6 +373,8 @@ int MainWindow::saveDefaultSettings()
 //============================================================================================================
 int MainWindow::createSurferScript()
 {
+    auto settings = SettingsManager::instance().settings();
+
     //********************************************************************************************************
     //Открываем файл скрипта на запись.
     //********************************************************************************************************
@@ -591,7 +395,7 @@ int MainWindow::createSurferScript()
     output << "SurferApp.GridData(\"" + qApp->applicationDirPath() + "/result/T.dat\", Algorithm:=srfTriangulation, ShowReport:=False, OutGrid:=\"" + qApp->applicationDirPath() + "/tmp/grid\")" << Qt::endl;
     output << "Set ImageMap = Doc.Shapes.AddImageMap(\"" + qApp->applicationDirPath() + "/tmp/grid\")" << Qt::endl;
     output << "Set ContourMap = Doc.Shapes.AddContourMap(\"" + qApp->applicationDirPath() + "/tmp/grid\")" << Qt::endl;
-    if(settings.surferVersion == Surfer8)
+    if(settings.surferVersion == SurferVersion::Surfer8)
         output << "ImageMap.Overlays(1).ColorMap.LoadFile(FileName:=SurferApp.Path+\"/Samples/Rainbow.clr\")" << Qt::endl;
     else
         output << "ImageMap.Overlays(1).ColorMap.LoadFile(FileName:=SurferApp.Path+\"/ColorScales/Rainbow.clr\")" << Qt::endl;
@@ -601,7 +405,7 @@ int MainWindow::createSurferScript()
     output << "SurferApp.GridData(\"" + qApp->applicationDirPath() + "/result/Psi.dat\", Algorithm:=srfTriangulation, ShowReport:=False, OutGrid:=\"" + qApp->applicationDirPath() + "/tmp/grid\")" << Qt::endl;
     output << "Set ImageMap = Doc.Shapes.AddImageMap(\"" + qApp->applicationDirPath() + "/tmp/grid\")" << Qt::endl;
     output << "Set ContourMap = Doc.Shapes.AddContourMap(\"" + qApp->applicationDirPath() + "/tmp/grid\")" << Qt::endl;
-    if(settings.surferVersion == Surfer8)
+    if(settings.surferVersion == SurferVersion::Surfer8)
         output << "ImageMap.Overlays(1).ColorMap.LoadFile(FileName:=SurferApp.Path+\"/Samples/Rainbow.clr\")" << Qt::endl;
     else
         output << "ImageMap.Overlays(1).ColorMap.LoadFile(FileName:=SurferApp.Path+\"/ColorScales/Rainbow.clr\")" << Qt::endl;
@@ -612,7 +416,7 @@ int MainWindow::createSurferScript()
     output << "SurferApp.GridData(\"" + qApp->applicationDirPath() + "/result/Omega.dat\", Algorithm:=srfTriangulation, ShowReport:=False, OutGrid:=\"" + qApp->applicationDirPath() + "/tmp/grid\")" << Qt::endl;
     output << "Set ImageMap = Doc.Shapes.AddImageMap(\"" + qApp->applicationDirPath() + "/tmp/grid\")" << Qt::endl;
     output << "Set ContourMap = Doc.Shapes.AddContourMap(\"" + qApp->applicationDirPath() + "/tmp/grid\")" << Qt::endl;
-    if(settings.surferVersion == Surfer8)
+    if(settings.surferVersion == SurferVersion::Surfer8)
         output << "ImageMap.Overlays(1).ColorMap.LoadFile(FileName:=SurferApp.Path+\"/Samples/Rainbow.clr\")" << Qt::endl;
     else
         output << "ImageMap.Overlays(1).ColorMap.LoadFile(FileName:=SurferApp.Path+\"/ColorScales/Rainbow.clr\")" << Qt::endl;
@@ -623,7 +427,7 @@ int MainWindow::createSurferScript()
     output << "SurferApp.GridData(\"" + qApp->applicationDirPath() + "/result/Vx.dat\", Algorithm:=srfTriangulation, ShowReport:=False, OutGrid:=\"" + qApp->applicationDirPath() + "/tmp/grid\")" << Qt::endl;
     output << "Set ImageMap = Doc.Shapes.AddImageMap(\"" + qApp->applicationDirPath() + "/tmp/grid\")" << Qt::endl;
     output << "Set ContourMap = Doc.Shapes.AddContourMap(\"" + qApp->applicationDirPath() + "/tmp/grid\")" << Qt::endl;
-    if(settings.surferVersion == Surfer8)
+    if(settings.surferVersion == SurferVersion::Surfer8)
         output << "ImageMap.Overlays(1).ColorMap.LoadFile(FileName:=SurferApp.Path+\"/Samples/Rainbow.clr\")" << Qt::endl;
     else
         output << "ImageMap.Overlays(1).ColorMap.LoadFile(FileName:=SurferApp.Path+\"/ColorScales/Rainbow.clr\")" << Qt::endl;
@@ -634,7 +438,7 @@ int MainWindow::createSurferScript()
     output << "SurferApp.GridData(\"" + qApp->applicationDirPath() + "/result/Vy.dat\", Algorithm:=srfTriangulation, ShowReport:=False, OutGrid:=\"" + qApp->applicationDirPath() + "/tmp/grid\")" << Qt::endl;
     output << "Set ImageMap = Doc.Shapes.AddImageMap(\"" + qApp->applicationDirPath() + "/tmp/grid\")" << Qt::endl;
     output << "Set ContourMap = Doc.Shapes.AddContourMap(\"" + qApp->applicationDirPath() + "/tmp/grid\")" << Qt::endl;
-    if(settings.surferVersion == Surfer8)
+    if(settings.surferVersion == SurferVersion::Surfer8)
         output << "ImageMap.Overlays(1).ColorMap.LoadFile(FileName:=SurferApp.Path+\"/Samples/Rainbow.clr\")" << Qt::endl;
     else
         output << "ImageMap.Overlays(1).ColorMap.LoadFile(FileName:=SurferApp.Path+\"/ColorScales/Rainbow.clr\")" << Qt::endl;
@@ -674,7 +478,6 @@ void MainWindow::onMaxIterNumAttained(double residual)
 MainWindow::~MainWindow()
 {
     delete ui;
-    delete settingsWindow;
     delete aboutWindow;
     delete helpWindow;
 }
@@ -712,19 +515,7 @@ void MainWindow::changeEvent(QEvent *e)
 //============================================================================================================
 void MainWindow::showSettingsWindow()
 {
-    settingsWindow->init(settings);
-    settingsWindow->show();
-}
-
-//============================================================================================================
-//Получение и сохранение новых настроек программы.
-//============================================================================================================
-void MainWindow::getSettings()
-{
-    settings = settingsWindow->getSettings();
-    if(curEngine == OpenGL)
-        glPainter->setColorScheme(settings.colorScheme);
-    saveSettings();
+    this->settingsWindow->show();
 }
 
 //============================================================================================================
@@ -732,7 +523,9 @@ void MainWindow::getSettings()
 //============================================================================================================
 void MainWindow::on_saveImageButton_clicked()
 {
-    if(curEngine == OpenGL)
+    auto settings = SettingsManager::instance().settings();
+
+    if(settings.paintEngine == PaintEngine::OpenGL)
     {
         QPixmap glPixmap = glPainter->grab();
         QString filename = qApp->applicationDirPath() + "/result/";

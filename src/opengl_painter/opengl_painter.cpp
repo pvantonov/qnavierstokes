@@ -5,13 +5,15 @@
 #include <QtGui/QOpenGLFunctions>
 #include <QtWidgets/QApplication>
 #include <QtWidgets/QMessageBox>
+#include <settings_manager.hpp>
 #include "opengl_painter.hpp"
 
 //============================================================================================================
 //============================================================================================================
-OpenGLPainter::OpenGLPainter(Settings settings, QWidget *parent) : QOpenGLWidget(parent)
+OpenGLPainter::OpenGLPainter(QWidget *parent) : QOpenGLWidget(parent)
 {
     paintAim = NotDefine;
+    auto settings = SettingsManager::instance().settings();
     scheme = settings.colorScheme;
 }
 
@@ -34,8 +36,6 @@ void OpenGLPainter::resizeGL(int w, int h)
 
 void OpenGLPainter::paintGlFile(const QString& filepath)
 {
-    QOpenGLFunctions *f = QOpenGLContext::currentContext()->functions();
-
     if(!QFile(filepath).exists())
     {
         glMatrixMode(GL_PROJECTION);

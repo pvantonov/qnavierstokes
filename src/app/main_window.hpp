@@ -1,12 +1,11 @@
 #pragma once
 #include <QtWidgets/QMainWindow>
-#include "settings.hpp"
 #include "help_window.hpp"
 #include "about_window.hpp"
 #include "ui_main_window.h"
-#include "settings_window.hpp"
 #include <emf_painter.hpp>
 #include <opengl_painter.hpp>
+#include <settings_window.hpp>
 #include <side_heating_solver.hpp>
 #include <bottom_heating_solver.hpp>
 
@@ -36,9 +35,6 @@ private slots:
 
     //! Сохранение отображенной функции в файл.
     void on_saveImageButton_clicked();
-
-    //! Получение и сохранение новых настроек программы.
-    void getSettings();
 
     //! Запуск решателя. Временная деактивация кнопки запуска решателя.
     void on_startButton_clicked();
@@ -79,28 +75,15 @@ private slots:
     void on_actionPrGr_toggled(bool checked);
 
 private:
-    Settings settings;                  //!< Настройки программы.
     Ui::MainWindow *ui;                 //!< Пользовательский интерфейс.
-    PaintEngin curEngine;               //!< Текущий графический движок программы.
-    QString uniqFoldername;             //!< Имя папки, в которую будет скопирован результат.
     EmfPainter *emfPainter;             //!< Виджет, позволяющий рисовать emf файлы.
     OpenGLPainter *glPainter;           //!< Виджет, рисующий результаты расчетов с помощью OpenGL.
     AboutWindow *aboutWindow;           //!< Окно с информацией о настройках.
     HelpWindow *helpWindow;             //!< Окно для отображения справки.
-    SettingsWindow *settingsWindow;     //!< Окно настроек.
+    QScopedPointer<SettingsWindow> settingsWindow;
 
     SideHeatingSolver solverSideHeating;
     BottomHeatingSolver solverBottomHeating;
-
-
-    //! Загрузить настройки программы из файла.
-    int loadSettings();
-
-    //! Сохранить настройки программы в файл.
-    int saveSettings();
-
-    //! Сохранить настройки по умолчанию в файл.
-    int saveDefaultSettings();
 
     //! Создать скрипт Surfer'а для обработки результатов.
     int createSurferScript();
