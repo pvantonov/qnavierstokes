@@ -38,8 +38,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     //********************************************************************************************************
 
     auto settings = SettingsManager::instance().settings();
-    if(settings.paintEngine == PaintEngine::Surfer)
-        ui->saveImageButton->setVisible(false);
 
     on_heightComboBox_currentIndexChanged(0);
     on_tBCComboBox_currentIndexChanged(0);
@@ -47,22 +45,11 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     //********************************************************************************************************
     //Создаем виджет отрисовки результата
     //********************************************************************************************************
-    if(settings.paintEngine == PaintEngine::Surfer)
-    {
-        emfPainter = new EmfPainter();
-        QVBoxLayout *solutionPainterLayout = new QVBoxLayout();
-        solutionPainterLayout->addWidget(emfPainter);
-        solutionPainterLayout->setContentsMargins(0,0,0,0);
-        ui->solutionPainterFrame->setLayout(solutionPainterLayout);
-    }
-    else
-    {
-        glPainter = new OpenGLPainter();
-        QVBoxLayout *solutionPainterLayout = new QVBoxLayout();
-        solutionPainterLayout->addWidget(glPainter);
-        solutionPainterLayout->setContentsMargins(0,0,0,0);
-        ui->solutionPainterFrame->setLayout(solutionPainterLayout);
-    }
+    glPainter = new OpenGLPainter();
+    QVBoxLayout *solutionPainterLayout = new QVBoxLayout();
+    solutionPainterLayout->addWidget(glPainter);
+    solutionPainterLayout->setContentsMargins(0,0,0,0);
+    ui->solutionPainterFrame->setLayout(solutionPainterLayout);
 
     //********************************************************************************************************
     //Соединяем сигналы/слоты
@@ -177,22 +164,8 @@ void MainWindow::onSolverFinished()
 {
     auto settings = SettingsManager::instance().settings();
 
-    if(settings.paintEngine == PaintEngine::Surfer)
-    {
-        if(QFile(settings.pathToScripter).exists())
-        {
-            createSurferScript();
-            QStringList arguments;
-            arguments << "-x" << qApp->applicationDirPath() + "/SurferScript.bas";
-            QProcess::execute(settings.pathToScripter,arguments);
-        }
-        emfPainter->setPaintAim(T);
-    }
-    else
-    {
-        glPainter->processData();
-        glPainter->setPaintAim(T);
-    }
+    glPainter->processData();
+    glPainter->setPaintAim(T);
 
     //********************************************************************************************************
     //Копируем результаты в уникальную папку.
@@ -325,132 +298,27 @@ void MainWindow::on_heightComboBox_currentIndexChanged(int index)
 //============================================================================================================
 void MainWindow::on_paintTButton_clicked()
 {
-    auto settings = SettingsManager::instance().settings();
-    if(settings.paintEngine == PaintEngine::Surfer)
-        emfPainter->setPaintAim(T);
-    else
-        glPainter->setPaintAim(T);
+    glPainter->setPaintAim(T);
 }
 
 void MainWindow::on_paintPsiButton_clicked()
 {
-    auto settings = SettingsManager::instance().settings();
-    if(settings.paintEngine == PaintEngine::Surfer)
-        emfPainter->setPaintAim(Psi);
-    else
-        glPainter->setPaintAim(Psi);
+    glPainter->setPaintAim(Psi);
 }
 
 void MainWindow::on_paintOmegaButton_clicked()
 {
-    auto settings = SettingsManager::instance().settings();
-    if(settings.paintEngine == PaintEngine::Surfer)
-        emfPainter->setPaintAim(Omega);
-    else
-        glPainter->setPaintAim(Omega);
+    glPainter->setPaintAim(Omega);
 }
 
 void MainWindow::on_paintVxButton_clicked()
 {
-    auto settings = SettingsManager::instance().settings();
-    if(settings.paintEngine == PaintEngine::Surfer)
-        emfPainter->setPaintAim(Vx);
-    else
-        glPainter->setPaintAim(Vx);
+    glPainter->setPaintAim(Vx);
 }
 
 void MainWindow::on_paintVyButton_clicked()
 {
-    auto settings = SettingsManager::instance().settings();
-    if(settings.paintEngine == PaintEngine::Surfer)
-        emfPainter->setPaintAim(Vy);
-    else
-        glPainter->setPaintAim(Vy);
-}
-
-//============================================================================================================
-//Создать скрипт Surfer'а для обработки результатов.
-//============================================================================================================
-int MainWindow::createSurferScript()
-{
-    auto settings = SettingsManager::instance().settings();
-
-    //********************************************************************************************************
-    //Открываем файл скрипта на запись.
-    //********************************************************************************************************
-    QFile file(qApp->applicationDirPath() + "/SurferScript.bas");
-    if(!file.open(QIODevice::WriteOnly | QIODevice::Text))
-        return 1;
-
-    QTextStream output(&file);
-    output << "Sub Main" << Qt::endl;
-    output << "Dim Doc As Object" << Qt::endl;
-    output << "Dim ImageMap As Object" << Qt::endl;
-    output << "Dim SurferApp As Object" << Qt::endl;
-    output << "Dim ContourMap As Object" << Qt::endl;
-    output << "Set SurferApp = CreateObject(\"Surfer.Application\")" << Qt::endl;
-    output << "Set Doc = SurferApp.Documents.Add" << Qt::endl;
-    output << "SurferApp.Visible = False" << Qt::endl;
-
-    output << "SurferApp.GridData(\"" + qApp->applicationDirPath() + "/result/T.dat\", Algorithm:=srfTriangulation, ShowReport:=False, OutGrid:=\"" + qApp->applicationDirPath() + "/tmp/grid\")" << Qt::endl;
-    output << "Set ImageMap = Doc.Shapes.AddImageMap(\"" + qApp->applicationDirPath() + "/tmp/grid\")" << Qt::endl;
-    output << "Set ContourMap = Doc.Shapes.AddContourMap(\"" + qApp->applicationDirPath() + "/tmp/grid\")" << Qt::endl;
-    if(settings.surferVersion == SurferVersion::Surfer8)
-        output << "ImageMap.Overlays(1).ColorMap.LoadFile(FileName:=SurferApp.Path+\"/Samples/Rainbow.clr\")" << Qt::endl;
-    else
-        output << "ImageMap.Overlays(1).ColorMap.LoadFile(FileName:=SurferApp.Path+\"/ColorScales/Rainbow.clr\")" << Qt::endl;
-    output << "Doc.Export(\"" + qApp->applicationDirPath() + "/result/T.emf\")" << Qt::endl;
-    output << "ImageMap.Visible = False" << Qt::endl;
-    output << "ContourMap.Visible = False" << Qt::endl;
-    output << "SurferApp.GridData(\"" + qApp->applicationDirPath() + "/result/Psi.dat\", Algorithm:=srfTriangulation, ShowReport:=False, OutGrid:=\"" + qApp->applicationDirPath() + "/tmp/grid\")" << Qt::endl;
-    output << "Set ImageMap = Doc.Shapes.AddImageMap(\"" + qApp->applicationDirPath() + "/tmp/grid\")" << Qt::endl;
-    output << "Set ContourMap = Doc.Shapes.AddContourMap(\"" + qApp->applicationDirPath() + "/tmp/grid\")" << Qt::endl;
-    if(settings.surferVersion == SurferVersion::Surfer8)
-        output << "ImageMap.Overlays(1).ColorMap.LoadFile(FileName:=SurferApp.Path+\"/Samples/Rainbow.clr\")" << Qt::endl;
-    else
-        output << "ImageMap.Overlays(1).ColorMap.LoadFile(FileName:=SurferApp.Path+\"/ColorScales/Rainbow.clr\")" << Qt::endl;
-    output << "Doc.Export(\"" + qApp->applicationDirPath() + "/result/Psi.emf\")" << Qt::endl;
-    output << "ImageMap.Visible = False" << Qt::endl;
-    output << "ContourMap.Visible = False" << Qt::endl;
-
-    output << "SurferApp.GridData(\"" + qApp->applicationDirPath() + "/result/Omega.dat\", Algorithm:=srfTriangulation, ShowReport:=False, OutGrid:=\"" + qApp->applicationDirPath() + "/tmp/grid\")" << Qt::endl;
-    output << "Set ImageMap = Doc.Shapes.AddImageMap(\"" + qApp->applicationDirPath() + "/tmp/grid\")" << Qt::endl;
-    output << "Set ContourMap = Doc.Shapes.AddContourMap(\"" + qApp->applicationDirPath() + "/tmp/grid\")" << Qt::endl;
-    if(settings.surferVersion == SurferVersion::Surfer8)
-        output << "ImageMap.Overlays(1).ColorMap.LoadFile(FileName:=SurferApp.Path+\"/Samples/Rainbow.clr\")" << Qt::endl;
-    else
-        output << "ImageMap.Overlays(1).ColorMap.LoadFile(FileName:=SurferApp.Path+\"/ColorScales/Rainbow.clr\")" << Qt::endl;
-    output << "Doc.Export(\"" + qApp->applicationDirPath() + "/result/Omega.emf\")" << Qt::endl;
-    output << "ImageMap.Visible = False" << Qt::endl;
-    output << "ContourMap.Visible = False" << Qt::endl;
-
-    output << "SurferApp.GridData(\"" + qApp->applicationDirPath() + "/result/Vx.dat\", Algorithm:=srfTriangulation, ShowReport:=False, OutGrid:=\"" + qApp->applicationDirPath() + "/tmp/grid\")" << Qt::endl;
-    output << "Set ImageMap = Doc.Shapes.AddImageMap(\"" + qApp->applicationDirPath() + "/tmp/grid\")" << Qt::endl;
-    output << "Set ContourMap = Doc.Shapes.AddContourMap(\"" + qApp->applicationDirPath() + "/tmp/grid\")" << Qt::endl;
-    if(settings.surferVersion == SurferVersion::Surfer8)
-        output << "ImageMap.Overlays(1).ColorMap.LoadFile(FileName:=SurferApp.Path+\"/Samples/Rainbow.clr\")" << Qt::endl;
-    else
-        output << "ImageMap.Overlays(1).ColorMap.LoadFile(FileName:=SurferApp.Path+\"/ColorScales/Rainbow.clr\")" << Qt::endl;
-    output << "Doc.Export(\"" + qApp->applicationDirPath() + "/result/Vx.emf\")" << Qt::endl;
-    output << "ImageMap.Visible = False" << Qt::endl;
-    output << "ContourMap.Visible = False" << Qt::endl;
-
-    output << "SurferApp.GridData(\"" + qApp->applicationDirPath() + "/result/Vy.dat\", Algorithm:=srfTriangulation, ShowReport:=False, OutGrid:=\"" + qApp->applicationDirPath() + "/tmp/grid\")" << Qt::endl;
-    output << "Set ImageMap = Doc.Shapes.AddImageMap(\"" + qApp->applicationDirPath() + "/tmp/grid\")" << Qt::endl;
-    output << "Set ContourMap = Doc.Shapes.AddContourMap(\"" + qApp->applicationDirPath() + "/tmp/grid\")" << Qt::endl;
-    if(settings.surferVersion == SurferVersion::Surfer8)
-        output << "ImageMap.Overlays(1).ColorMap.LoadFile(FileName:=SurferApp.Path+\"/Samples/Rainbow.clr\")" << Qt::endl;
-    else
-        output << "ImageMap.Overlays(1).ColorMap.LoadFile(FileName:=SurferApp.Path+\"/ColorScales/Rainbow.clr\")" << Qt::endl;
-    output << "Doc.Export(\"" + qApp->applicationDirPath() + "/result/Vy.emf\")" << Qt::endl;
-    output << "ImageMap.Visible = False" << Qt::endl;
-    output << "ContourMap.Visible = False" << Qt::endl;
-
-    output << "End Sub" << Qt::endl;
-    output.flush();
-    file.close();
-
-    return 0;
+    glPainter->setPaintAim(Vy);
 }
 
 //============================================================================================================

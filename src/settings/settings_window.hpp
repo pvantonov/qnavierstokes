@@ -24,8 +24,6 @@ private:
     Ui::SettingsWindow *_ui;
 
 private slots:
-    void _selectScripterPath();
-
     void _rollbackSettings();
 
     void _commitCommitSettings();

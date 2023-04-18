@@ -14,7 +14,6 @@ add_executable(qnavierstokes
 
 target_link_libraries(qnavierstokes PRIVATE
     bottom_heating
-    emf_painter
     opengl_painter
     side_heating
     color_scale

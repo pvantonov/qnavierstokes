@@ -3,7 +3,6 @@
 #include "help_window.hpp"
 #include "about_window.hpp"
 #include "ui_main_window.h"
-#include <emf_painter.hpp>
 #include <opengl_painter.hpp>
 #include <settings_window.hpp>
 #include <side_heating_solver.hpp>
@@ -76,7 +75,6 @@ private slots:
 
 private:
     Ui::MainWindow *ui;                 //!< Пользовательский интерфейс.
-    EmfPainter *emfPainter;             //!< Виджет, позволяющий рисовать emf файлы.
     OpenGLPainter *glPainter;           //!< Виджет, рисующий результаты расчетов с помощью OpenGL.
     AboutWindow *aboutWindow;           //!< Окно с информацией о настройках.
     HelpWindow *helpWindow;             //!< Окно для отображения справки.
@@ -84,7 +82,4 @@ private:
 
     SideHeatingSolver solverSideHeating;
     BottomHeatingSolver solverBottomHeating;
-
-    //! Создать скрипт Surfer'а для обработки результатов.
-    int createSurferScript();
 };
