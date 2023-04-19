@@ -14,7 +14,11 @@
 
 //============================================================================================================
 //============================================================================================================
-MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWindow), settingsWindow(new SettingsWindow(this))
+MainWindow::MainWindow(QWidget *parent) :
+    QMainWindow(parent),
+    ui(new Ui::MainWindow),
+    settingsWindow(new SettingsWindow(this)),
+    helpWindow(new HelpWindow(this))
 {
     ui->setupUi(this);
 
@@ -22,7 +26,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     //Создаем окно настроек и окно с информацией о программе.
     //********************************************************************************************************
     aboutWindow = new AboutWindow(this);
-    helpWindow = new HelpWindow();
 
     //********************************************************************************************************
     //Убеждаемся в существовании директории для временных файлов и дериктории для записи результата
@@ -55,7 +58,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     //Соединяем сигналы/слоты
     //********************************************************************************************************
     connect(ui->aboutQtAction,SIGNAL(triggered()),qApp,SLOT(aboutQt()));
-    connect(ui->helpAction,SIGNAL(triggered()),helpWindow,SLOT(show()));
+    connect(ui->helpAction,SIGNAL(triggered()),this,SLOT(showHelpWindow()));
     connect(ui->aboutAction,SIGNAL(triggered()),aboutWindow,SLOT(show()));
     connect(ui->settingsAction,SIGNAL(triggered()),this,SLOT(showSettingsWindow()));
 
@@ -347,7 +350,6 @@ MainWindow::~MainWindow()
 {
     delete ui;
     delete aboutWindow;
-    delete helpWindow;
 }
 
 //============================================================================================================
@@ -378,12 +380,14 @@ void MainWindow::changeEvent(QEvent *e)
     }
 }
 
-//============================================================================================================
-//Вызов диалогового окна с настройками программы.
-//============================================================================================================
 void MainWindow::showSettingsWindow()
 {
     this->settingsWindow->show();
+}
+
+void MainWindow::showHelpWindow()
+{
+    this->helpWindow->show();
 }
 
 //============================================================================================================

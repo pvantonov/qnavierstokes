@@ -143,3 +143,8 @@ CMakeLists.txt.user*
 *.dll
 
 *.exe
+
+
+# Qt Help files
+
+*.qch

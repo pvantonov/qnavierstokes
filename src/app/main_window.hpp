@@ -1,9 +1,9 @@
 #pragma once
 #include <QtWidgets/QMainWindow>
-#include "help_window.hpp"
 #include "about_window.hpp"
 #include "ui_main_window.h"
 #include <opengl_painter.hpp>
+#include <help_window.hpp>
 #include <settings_window.hpp>
 #include <side_heating_solver.hpp>
 #include <bottom_heating_solver.hpp>
@@ -29,8 +29,8 @@ protected:
     void changeEvent(QEvent *e);
 
 private slots:
-    //! Вызов диалогового окна с настройками программы.
     void showSettingsWindow();
+    void showHelpWindow();
 
     //! Сохранение отображенной функции в файл.
     void on_saveImageButton_clicked();
@@ -77,8 +77,8 @@ private:
     Ui::MainWindow *ui;                 //!< Пользовательский интерфейс.
     OpenGLPainter *glPainter;           //!< Виджет, рисующий результаты расчетов с помощью OpenGL.
     AboutWindow *aboutWindow;           //!< Окно с информацией о настройках.
-    HelpWindow *helpWindow;             //!< Окно для отображения справки.
     QScopedPointer<SettingsWindow> settingsWindow;
+    QScopedPointer<HelpWindow> helpWindow;
 
     SideHeatingSolver solverSideHeating;
     BottomHeatingSolver solverBottomHeating;
