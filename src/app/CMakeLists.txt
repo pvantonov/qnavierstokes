@@ -7,6 +7,8 @@ add_executable(qnavierstokes
     main_window.cpp
     main_window.hpp
     main_window.ui
+    scientific_spinbox.cpp
+    scientific_spinbox.hpp
     paint_aim.hpp
 )
 

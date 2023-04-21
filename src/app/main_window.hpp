@@ -7,6 +7,7 @@
 #include <settings_window.hpp>
 #include <side_heating_solver.hpp>
 #include <bottom_heating_solver.hpp>
+#include "scientific_spinbox.hpp"
 
 namespace Ui
 {
@@ -71,14 +72,14 @@ private slots:
     //! Вывод информации о том, что решатель не смог найти решение.
     void onMaxIterNumAttained(double residual);
 
-    void on_actionPrGr_toggled(bool checked);
-
 private:
     Ui::MainWindow *ui;                 //!< Пользовательский интерфейс.
     OpenGLPainter *glPainter;           //!< Виджет, рисующий результаты расчетов с помощью OpenGL.
     AboutWindow *aboutWindow;           //!< Окно с информацией о настройках.
     QScopedPointer<SettingsWindow> settingsWindow;
     QScopedPointer<HelpWindow> helpWindow;
+    QScopedPointer<QScientificSpinbox> prandtlSpinBox;
+    QScopedPointer<QScientificSpinbox> grashofSpinBox;
 
     SideHeatingSolver solverSideHeating;
     BottomHeatingSolver solverBottomHeating;

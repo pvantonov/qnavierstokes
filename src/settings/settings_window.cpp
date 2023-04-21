@@ -28,6 +28,8 @@ void SettingsWindow::_adaptSettings()
     auto settings = SettingsManager::instance().settings();
 
     this->_ui->useUniqFoldersCheckBox->setChecked(settings.useUniqueFolders);
+    this->_ui->restrictPrGr->setChecked(settings.limitPrGr);
+    this->_ui->useScientificNotation->setChecked(settings.scientificPrGr);
 
     switch(settings.paintEngine)
     {
@@ -65,6 +67,8 @@ void SettingsWindow::_commitCommitSettings()
     Settings settings;
 
     settings.useUniqueFolders = this->_ui->useUniqFoldersCheckBox->isChecked();
+    settings.limitPrGr = this->_ui->restrictPrGr->isChecked();
+    settings.scientificPrGr = this->_ui->useScientificNotation->isChecked();
 
     if(this->_ui->paintEngineComboBox->currentIndex() == 0){
         settings.paintEngine = PaintEngine::OpenGL;

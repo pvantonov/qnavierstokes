@@ -18,7 +18,9 @@ MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow),
     settingsWindow(new SettingsWindow(this)),
-    helpWindow(new HelpWindow(this))
+    helpWindow(new HelpWindow(this)),
+    prandtlSpinBox(new QScientificSpinbox(this)),
+    grashofSpinBox(new QScientificSpinbox(this))
 {
     ui->setupUi(this);
 
@@ -45,6 +47,12 @@ MainWindow::MainWindow(QWidget *parent) :
     on_heightComboBox_currentIndexChanged(0);
     on_tBCComboBox_currentIndexChanged(0);
 
+    this->prandtlSpinBox->setValue(1);
+    this->grashofSpinBox->setValue(100);
+
+    this->ui->formLayout->insertRow(2, this->prandtlSpinBox.get());
+    this->ui->formLayout->insertRow(4, this->grashofSpinBox.get());
+
     //********************************************************************************************************
     //Создаем виджет отрисовки результата
     //********************************************************************************************************
@@ -54,9 +62,32 @@ MainWindow::MainWindow(QWidget *parent) :
     solutionPainterLayout->setContentsMargins(0,0,0,0);
     ui->solutionPainterFrame->setLayout(solutionPainterLayout);
 
+    auto adaptPrGr = [=](const Settings& settings){
+        if (settings.limitPrGr) {
+            this->prandtlSpinBox->setMinimum(0.001);
+            this->prandtlSpinBox->setMaximum(1000);
+            this->grashofSpinBox->setMinimum(0.001);
+            this->grashofSpinBox->setMaximum(100000);
+            this->prandtlSpinBox->setToolTip(tr("Введите число от 0,001 до 1000"));
+            this->grashofSpinBox->setToolTip(tr("Введите число от 0,001 до 100000"));
+        } else {
+            this->prandtlSpinBox->setMinimum(1e-6);
+            this->prandtlSpinBox->setMaximum(1e20);
+            this->grashofSpinBox->setMinimum(1e-6);
+            this->grashofSpinBox->setMaximum(1e20);
+            this->prandtlSpinBox->setToolTip(tr("Введите число от 1e-6 до 1e20"));
+            this->grashofSpinBox->setToolTip(tr("Введите число от 1e-6 до 1e20"));
+        }
+        this->prandtlSpinBox->setUseScientificNotation(settings.scientificPrGr);
+        this->grashofSpinBox->setUseScientificNotation(settings.scientificPrGr);
+    };
+    adaptPrGr(settings);
+
     //********************************************************************************************************
     //Соединяем сигналы/слоты
     //********************************************************************************************************
+    connect(&SettingsManager::instance(), &SettingsManager::settingsChanged, this, adaptPrGr);
+
     connect(ui->aboutQtAction,SIGNAL(triggered()),qApp,SLOT(aboutQt()));
     connect(ui->helpAction,SIGNAL(triggered()),this,SLOT(showHelpWindow()));
     connect(ui->aboutAction,SIGNAL(triggered()),aboutWindow,SLOT(show()));
@@ -74,40 +105,6 @@ MainWindow::MainWindow(QWidget *parent) :
             this,SLOT(onMaxIterNumAttained(double)));
     connect(&solverBottomHeating,SIGNAL(maxIterNumberAttained(double)),
             this,SLOT(onMaxIterNumAttained(double)));
-}
-
-void MainWindow::on_actionPrGr_toggled(bool checked)
-{
-    if(checked)
-    {
-        ui->prandtlDoubleSpinBox->setMinimum(0.001);
-        ui->prandtlDoubleSpinBox->setMaximum(1000.);
-        ui->grashofDoubleSpinBox->setMinimum(0.001);
-        ui->grashofDoubleSpinBox->setMaximum(100000.);
-
-        ui->prandtlDoubleSpinBox->setDecimals(3);
-        ui->grashofDoubleSpinBox->setDecimals(3);
-
-        ui->prandtlDoubleSpinBox->setToolTip(tr("Введите число от 0,001 до 1000"));
-        ui->grashofDoubleSpinBox->setToolTip(tr("Введите число от 0,001 до 100000"));
-    }
-    else
-    {
-        ui->prandtlDoubleSpinBox->setMinimum(std::numeric_limits<double>::epsilon());
-        ui->prandtlDoubleSpinBox->setMaximum(1e22);
-        ui->grashofDoubleSpinBox->setMinimum(std::numeric_limits<double>::epsilon());
-        ui->grashofDoubleSpinBox->setMaximum(1e22);
-
-        ui->prandtlDoubleSpinBox->setDecimals(18);
-        ui->grashofDoubleSpinBox->setDecimals(18);
-
-        ui->prandtlDoubleSpinBox->setToolTip(tr("Введите число от ") + QString::number(std::numeric_limits<double>::epsilon()) + tr(" до ") + QString::number(1e22));
-        ui->grashofDoubleSpinBox->setToolTip(tr("Введите число от ") + QString::number(std::numeric_limits<double>::epsilon()) + tr(" до ") + QString::number(1e22));
-    }
-    auto settings = SettingsManager::instance().settings();
-    auto newSettings(settings);
-    newSettings.limitPrGr = checked;
-    SettingsManager::instance().setSettings(newSettings);
 }
 
 //============================================================================================================
@@ -133,8 +130,8 @@ void MainWindow::on_startButton_clicked()
     if(ui->tBCComboBox->currentIndex() == 0)
     {
         solverSideHeating.setProblemParameters(ui->heightComboBox->currentText().replace(',', '.').toDouble(),
-                                               ui->prandtlDoubleSpinBox->value(),
-                                               ui->grashofDoubleSpinBox->value(),
+                                               this->prandtlSpinBox->value(),
+                                               this->grashofSpinBox->value(),
                                                ui->leftWallCheckBox->isChecked(),
                                                ui->rightWallCheckBox->isChecked(),
                                                ui->topWallCheckBox->isChecked(),
@@ -147,8 +144,8 @@ void MainWindow::on_startButton_clicked()
     else
     {
         solverBottomHeating.setProblemParameters(1.0/ui->heightComboBox->currentText().replace(',', '.').toDouble(),
-                                                 ui->prandtlDoubleSpinBox->value(),
-                                                 ui->grashofDoubleSpinBox->value(),
+                                                 this->prandtlSpinBox->value(),
+                                                 this->grashofSpinBox->value(),
                                                  ui->leftWallCheckBox->isChecked(),
                                                  ui->rightWallCheckBox->isChecked(),
                                                  ui->topWallCheckBox->isChecked(),
@@ -188,9 +185,9 @@ void MainWindow::onSolverFinished()
         uniqFoldername += ui->heightComboBox->currentText();
 
         uniqFoldername += "_[Pr";
-        uniqFoldername += QString::number(ui->prandtlDoubleSpinBox->value());
+        uniqFoldername += QString::number(this->prandtlSpinBox->value());
         uniqFoldername += ";Gr";
-        uniqFoldername += QString::number(ui->grashofDoubleSpinBox->value());
+        uniqFoldername += QString::number(this->grashofSpinBox->value());
         uniqFoldername += "][";
         uniqFoldername += "t" + QString::number(ui->topWallCheckBox->isChecked());
         uniqFoldername += ";";

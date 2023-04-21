@@ -18,7 +18,8 @@ void SettingsManager::_loadSettings()
 {
     QSettings settings(SettingsManager::_settingsPath(), QSettings::IniFormat);
     this->_settings.useUniqueFolders = settings.value("common/use_unique_folders", QVariant(false)).toBool();
-    this->_settings.limitPrGr = settings.value("common/limit_pr_gr", QVariant(true)).toBool();
+    this->_settings.limitPrGr = settings.value("common/limit_pr_gr", QVariant(false)).toBool();
+    this->_settings.scientificPrGr = settings.value("experimental/scientific_pr_gr", QVariant(false)).toBool();
 
     if (settings.contains("painting/engine")) {
         this->_settings.paintEngine = static_cast<PaintEngine>(settings.value("painting/engine").toInt());
@@ -40,4 +41,5 @@ void SettingsManager::_saveSettings() const
     settings.setValue("painting/engine", QVariant(static_cast<int>(this->_settings.paintEngine)));
     settings.setValue("painting/color_scheme", QVariant(static_cast<int>(this->_settings.colorScheme)));
     settings.setValue("common/limit_pr_gr", QVariant(this->_settings.limitPrGr));
+    settings.setValue("experimental/scientific_pr_gr", QVariant(this->_settings.scientificPrGr));
 }

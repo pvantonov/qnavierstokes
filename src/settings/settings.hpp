@@ -20,4 +20,5 @@ struct Settings
     PaintEngine paintEngine;  // Используемый движок отрисовки результата
     ColorScheme colorScheme;  // Цветовая гамма, используемая для отрисовки результата
     bool limitPrGr;  // Ограничивать значения чисел Pr и Gr
+    bool scientificPrGr;  // Отображать Pr и Gr в экспоненциальной нотации
 };
